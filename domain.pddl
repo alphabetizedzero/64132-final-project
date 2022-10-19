@@ -1,6 +1,3 @@
-// Reference: https://planning.wiki/ref/pddl/domain
-
-
 (define
     (domain robot_world)
     (:requirements :typing)
@@ -28,6 +25,7 @@
     (:action pick-up
         :parameters
             (
+                ; TODO: remove ?s before parameter names
                 ?obj - object
                 ?robot-zone - zone  ; The robot should be in this zone to pick up the object
             )
