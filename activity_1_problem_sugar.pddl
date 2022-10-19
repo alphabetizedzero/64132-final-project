@@ -1,19 +1,17 @@
 (define (problem sugar_box_move)
 	(:domain robot_world)
 	(:objects
-    	sugar_box - sugar_box
-		robot_arm - robot
-		burner - location
-		counter - location
+    	sugar - object
+		robot-arm - object
+		sugar-grasp - location
+		sugar-goal - location
 	)
 
 	(:init
-		(on sugar_box burner)
-		(robot_arm_empty)
+		(within sugar sugar-grasp)
+		(gripper-empty)
 	)
 	(:goal 
-		(on sugar_box counter)
-		(robot_location sugar_goal_position)
-		(robot_arm_empty)
+		(within sugar sugar-goal)
 	)
 )

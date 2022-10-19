@@ -12,12 +12,12 @@
 
         
     (:predicates
-        (within ?obj - object ?z - zone)
+        (within ?obj - object ?zone - zone)
 
         (grasped ?obj - object)
 
         (drawer-open)
-        (gripper-empty)
+       (gripper-empty)
     )
 
 
@@ -25,7 +25,6 @@
     (:action pick-up
         :parameters
             (
-                ; TODO: remove ?s before parameter names
                 ?obj - object
                 ?robot-zone - zone  ; The robot should be in this zone to pick up the object
             )
@@ -61,26 +60,26 @@
     (:action move-robot-base-to
         :parameters
             (
-                ?z - zone
+                ?zone - zone
             )
         :precondition
             ()
         :effect
             (and
-                (within robot-base ?z)
+                (within robot-base ?zone)
             )
     )
 
     (:action move-robot-arm-to
         :parameters
             (
-                ?z - zone
+                ?zone - zone
             )
         :precondition
             ()
         :effect
             (and
-                (within robot-arm ?z)
+                (within robot-arm ?zone)
             )
     )
 
