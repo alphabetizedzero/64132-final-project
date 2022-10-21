@@ -1,9 +1,9 @@
 # 64132-final-project
 
 
-Activity Planning
+**Activity Planning**
 
-To break down the problem into managable parts, we first create some assumptions:
+To break down the problem into managable parts, we first have some assumptions:
 * The robot is given the locations of the sugar box, spam box, and the goal.
 * There will always be a sugar box, a spam box, goal zones, and a robot.
 * The robot's sensors are accurate, meaning that the action that it is told to perform will be completed 100% of the time.
