@@ -16,23 +16,25 @@
         (within ?obj - object ?zone - zone)
 
         (grasped ?obj - object)
+        (gripper-empty)
         
         (accessible ?zone - zone)
     )
-
-
+    
 
     (:action pick-up-sugar
         :parameters
             ()
         :precondition
             (and
+                (gripper-empty)
                 (within robot-base robot-grasp-sugar)
                 (within sugar sugar-start)
             )
         :effect
             (and
                 (grasped sugar)
+                (not (gripper-empty))
                 (not (within sugar sugar-start))
             )
     )
@@ -43,12 +45,14 @@
         :precondition
             (and
                 (grasped sugar)
+                (not (gripper-empty))
                 (within robot-base robot-drop-sugar)
                 (accessible sugar-goal)
             )
         :effect
             (and
                 (not (grasped sugar))
+                (gripper-empty)
                 (within sugar sugar-goal)
             )
     )
@@ -58,12 +62,14 @@
             ()
         :precondition
             (and
+                (gripper-empty)
                 (within robot-base robot-grasp-spam)
                 (within spam spam-start)
             )
         :effect
             (and
                 (grasped spam)
+                (not (gripper-empty))
                 (not (within spam spam-start))
             )
     )
@@ -74,13 +80,15 @@
         :precondition
             (and
                 (grasped spam)
+                (not (gripper-empty))
                 (within robot-base robot-drop-spam)
                 (accessible spam-goal)
             )
         :effect
             (and
                 (not (grasped spam))
-                (within sugar spam-goal)
+                (gripper-empty)
+                (within spam spam-goal)
             )
     )
 
@@ -104,11 +112,27 @@
             ()
         :precondition
             (and
-            	(grasped drawer)
-            	(not (accessible spam-goal))  ; Drawer is closed
+                (gripper-empty)
+                (not (accessible spam-goal))  ; Drawer is closed
+                (within robot-base robot-drop-spam)
+                ; TODO: In order to have (grasped drawer) precondition, we need a (grasp ?obj) action which requires some way of knowing
+                ; if we're in range of the ?obj. Alternatively, we could have a specific grasp-drawer action
             )
         :effect
             (accessible spam-goal)
+	)
+
+    (:action close-drawer
+        :parameters
+            ()
+        :precondition
+            (and
+                (gripper-empty)
+                (accessible spam-goal)  ; Drawer is open
+                (within robot-base robot-drop-spam)
+            )
+        :effect
+            (not (accessible spam-goal))
 	)
 
 )

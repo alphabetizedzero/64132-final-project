@@ -5,7 +5,7 @@
 		(within robot-base robot-start)
 		(within sugar sugar-start)
 		(within spam spam-start)
-		
+
 		(gripper-empty)
 
 		(accessible sugar-start)
@@ -13,6 +13,10 @@
 		(accessible spam-start)
 	)
 	(:goal 
-		(within sugar sugar-goal)
+		(and
+			(within sugar sugar-goal)
+			(within spam spam-goal)
+			(not (accessible spam-goal))  ; End with the drawer closed
+		)
 	)
 )
