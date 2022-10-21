@@ -6,16 +6,8 @@
         robot-base robot-arm sugar drawer spam - object
 
         robot-start - zone
-        sugar-start sugar-goal sugar-grasp - zone
-        spam-start spam-goal spam-grasp - zone
-
-         ; robot-start: the zone the robot starts in
-         ; sugar-start: the sugar starts in this zone
-         ; sugar-grasp: the robot-base must be in this zone to grasp the sugar
-         ; sugar-goal: the sugar must be within this zone for the task to be complete
-         ; spam-start: the spam starts in this location
-         ; spam-grasp: the robot-base must be in this zone to grasp the spam
-         ; spam-goal: the spam must be in this zone for the task to be complete
+        sugar-start sugar-goal robot-grasp-sugar robot-drop-sugar - zone
+        spam-start spam-goal robot-grasp-spam robot-drop-spam - zone
     )
 
 
@@ -30,43 +22,65 @@
 
 
 
-    (:action pick-up
+    (:action pick-up-sugar
         :parameters
-            (
-                ?obj - object
-                ?obj-zone - zone  ; The object is in this zone
-                ?robot-zone - zone  ; The robot should be in this zone to pick up the object
-            )
+            ()
         :precondition
             (and
-                (within ?obj ?obj-zone)
-                (within robot-base ?robot-zone)
-                (accessible ?obj-zone)
+                (within robot-base robot-grasp-sugar)
+                (within sugar sugar-start)
             )
         :effect
             (and
-                (grasped ?obj)
-                (not (within ?obj ?obj-zone))
+                (grasped sugar)
+                (not (within sugar sugar-start))
             )
     )
 
-    (:action put-down
+    (:action put-down-sugar
         :parameters
-            (
-                ?obj - object
-                ?target-zone - zone  ; The object should be put down in this zone
-                ?robot-zone - zone  ; The robot should be in this zone to put down the object
-            )
+            ()
         :precondition
             (and
-                (grasped ?obj)
-                (within robot-base ?robot-zone)
-                (accessible ?target-zone)
+                (grasped sugar)
+                (within robot-base robot-drop-sugar)
+                (accessible sugar-goal)
             )
         :effect
             (and
-                (not (grasped ?obj))
-                (within ?obj ?target-zone)
+                (not (grasped sugar))
+                (within sugar sugar-goal)
+            )
+    )
+
+    (:action pick-up-spam
+        :parameters
+            ()
+        :precondition
+            (and
+                (within robot-base robot-grasp-spam)
+                (within spam spam-start)
+            )
+        :effect
+            (and
+                (grasped spam)
+                (not (within spam spam-start))
+            )
+    )
+
+    (:action put-down-spam
+        :parameters
+            ()
+        :precondition
+            (and
+                (grasped spam)
+                (within robot-base robot-drop-spam)
+                (accessible spam-goal)
+            )
+        :effect
+            (and
+                (not (grasped spam))
+                (within sugar spam-goal)
             )
     )
 
@@ -85,28 +99,13 @@
             )
     )
 
-    (:action move-robot-arm-to
-        :parameters
-            (
-                ?from-zone - zone  ; where the robot arm currently is
-                ?to-zone - zone  ; where the robot arm will end up
-            )
-        :precondition
-            (within robot-arm ?from-zone)
-        :effect
-            (and
-                (not (within robot-arm ?from-zone))
-                (within robot-arm ?to-zone)
-            )
-    )
-
     (:action open-drawer
         :parameters
             ()
         :precondition
             (and
             	(grasped drawer)
-            	(not (accessible ?spam-goal))  ; Drawer is closed
+            	(not (accessible spam-goal))  ; Drawer is closed
             )
         :effect
             (accessible spam-goal)
