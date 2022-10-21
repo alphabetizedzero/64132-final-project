@@ -8,7 +8,6 @@
 	)
 
 	(:init
-		(within sugar sugar-grasp)
 		(gripper-empty)
 	)
 	(:goal 

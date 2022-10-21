@@ -17,7 +17,6 @@
         (grasped ?obj - object)
 
         (drawer-open)
-       (gripper-empty)
     )
 
 
@@ -30,30 +29,29 @@
             )
         :precondition
             (and
-                (gripper-empty)
                 (within robot-base ?robot-zone)
             )
         :effect
             (and
-                (not (gripper-empty))
-                (grasped ?obj - object)
+                (grasped ?obj)
             )
     )
 
     (:action put-down
         :parameters
             (
+                ?obj - object
                 ?target-zone - zone  ; The object should be put down in this zone
                 ?robot-zone - zone  ; The robot should be in this zone to put down the object
             )
         :precondition
             (and
-                (not (gripper-empty))
+                (grasped ?obj)
                 (within robot-base ?robot-zone)
             )
         :effect
             (and
-                (gripper-empty)
+                (within ?obj ?target-zone)
             )
     )
 
