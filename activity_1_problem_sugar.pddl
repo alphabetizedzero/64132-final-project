@@ -1,14 +1,16 @@
 (define (problem sugar_box_move)
 	(:domain robot_world)
-	(:objects
-    	sugar - object
-		robot-arm - object
-		sugar-grasp - location
-		sugar-goal - location
-	)
 
 	(:init
+		(within robot-base robot-start)
+		(within sugar sugar-start)
+		(within spam spam-start)
+		
 		(gripper-empty)
+
+		(accessible sugar-start)
+		(accessible sugar-goal)
+		(accessible spam-start)
 	)
 	(:goal 
 		(within sugar sugar-goal)
