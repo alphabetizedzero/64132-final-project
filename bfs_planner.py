@@ -17,20 +17,22 @@ def insert_params(predicates, params):
     return output
 
 
-def get_valid_actions(state, actions):
+def get_valid_actions(state, parser):
     """
     :param state: the state as a frozenset of predicates. The predicates should be tuples of strings
-    :param actions: a list of pddl_parser Action objects
+    :param parser: a pddl Parser object that has already parsed the domain and problem files
     :returns: A list of tuples: [(Action, {param: value}), ...] where the tuples represent valid Action/parameter combos that could be taken
     """
 
     output = []
 
+    actions = parser.actions
+
     for act in actions:
                     
         # Use the parameter types to generate all combinations of possible input parameters
         param_types = [param[1] for param in act.parameters]
-        param_options = [PARSER.types[pt] for pt in param_types]
+        param_options = [parser.types[pt] for pt in param_types]
         param_combos = product(*param_options)  # This is an iterator of tuples. Each tuple is a set of parameters (in order) that could be plugged into the action
 
         # Convert the set of parameter tuples to a map from parameter name to parameter value (e.g. {'?obj': sugar})
@@ -66,13 +68,15 @@ def apply_action(state, action, params):
     return state.difference(del_effects).union(add_effects)
 
 
-def bfs(state_init, goal_positive_preconditions, goal_negative_preconditions):
+def bfs(parser):
     """
-    :param state_init: the initial state as a frozenset of predicates. The predicates should be tuples of strings
-    :param goal_positive_preconditions: a frozenset of predicates representing the positive preconditions of the goal. The predicates should be tuples of strings
-    :param goal_negative_preconditions: a frozenset of predicates representing the negative preconditions of the goal. The predicates should be tuples of strings
+    :param parser: a pddl Parser object that has already parsed the domain and problem files
     :returns: a sequence of actions that will lead from `state_init` to `state_goal`
     """
+
+    state_init = parser.state
+    positive_goals = parser.positive_goals
+    negative_goals = parser.negative_goals
 
     visited = {state_init}  # The set of states that have already been added to the queue
 
@@ -85,10 +89,10 @@ def bfs(state_init, goal_positive_preconditions, goal_negative_preconditions):
 
         # print(f'popped_state: {popped_state}')
 
-        if goal_positive_preconditions.issubset(popped_state) and goal_negative_preconditions.isdisjoint(popped_state):
+        if positive_goals.issubset(popped_state) and negative_goals.isdisjoint(popped_state):
             return popped_actions
 
-        potential_actions = get_valid_actions(popped_state, PARSER.actions)
+        potential_actions = get_valid_actions(popped_state, parser)
 
         for action, params in potential_actions:
             new_state = apply_action(popped_state, action, params)
@@ -98,27 +102,24 @@ def bfs(state_init, goal_positive_preconditions, goal_negative_preconditions):
                 visited.add(new_state)
 
 
-if __name__ == '__main__':
+def generate_plan(domain_file, problem_file):
+    '''
+    @param domain_file: the PDDL domain file
+    @param problem_file: the PDDL problem file
 
+    @returns: a sequence of actions accomplishing the goal, or None if no solution found
+    '''
 
     # Parse input files
-    PARSER = PDDL_Parser()
-    PARSER.parse_domain('domain.pddl')
-    PARSER.parse_problem('activity_1_problem_sugar.pddl')
+    parser = PDDL_Parser()
+    parser.parse_domain(domain_file)
+    parser.parse_problem(problem_file)
 
-    print('PARSER STATE:')
-    for k, v in PARSER.__dict__.items():
-        print(f'{k}\t\t{v}')
+    return bfs(parser)
 
-    print('\n\n\n')
+if __name__ == '__main__':
 
-    init_state = PARSER.state
-
-    print(f'Initial State:\n{init_state}')
-    print(f'Pos Precond: {PARSER.positive_goals}')
-    print(f'Neg Precond: {PARSER.negative_goals}\n\n')
-
-    result = bfs(init_state, PARSER.positive_goals, PARSER.negative_goals)
+    result = generate_plan('domain.pddl', 'problem.pddl')
     for i, (action, params) in enumerate(result):
         print(f'Action {i}:\n{action}')
         print(f'Params:\n{params}')
