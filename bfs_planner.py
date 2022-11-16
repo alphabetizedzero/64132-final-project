@@ -66,10 +66,11 @@ def apply_action(state, action, params):
     return state.difference(del_effects).union(add_effects)
 
 
-def bfs(state_init, state_goal):
+def bfs(state_init, goal_positive_preconditions, goal_negative_preconditions):
     """
-    :param state_init:
-    :param state_goal:
+    :param state_init: the initial state as a frozenset of predicates. The predicates should be tuples of strings
+    :param goal_positive_preconditions: a frozenset of predicates representing the positive preconditions of the goal. The predicates should be tuples of strings
+    :param goal_negative_preconditions: a frozenset of predicates representing the negative preconditions of the goal. The predicates should be tuples of strings
     :returns: a sequence of actions that will lead from `state_init` to `state_goal`
     """
 
@@ -83,7 +84,8 @@ def bfs(state_init, state_goal):
         search_queue = search_queue[1:]
 
         # print(f'popped_state: {popped_state}')
-        if state_goal.issubset(popped_state):
+
+        if goal_positive_preconditions.issubset(popped_state) and goal_negative_preconditions.isdisjoint(popped_state):
             return popped_actions
 
         potential_actions = get_valid_actions(popped_state, PARSER.actions)
@@ -94,20 +96,6 @@ def bfs(state_init, state_goal):
             if new_state not in visited:
                 search_queue.append((new_state, [*popped_actions, (action, params)]))
                 visited.add(new_state)
-
-
-        # print(f'\nSearch Queue ({len(search_queue)}):\n')
-        # for s, a in search_queue:
-        #     print('Taking Action:')
-        #     print(f'{a[0][0]}')
-        #     print(f'{a[0][1]}')
-        #     print(f'Resulting state: {s}')
-        #     print('\n\n\n')
-
-        
-        # break
-
-        
 
 
 if __name__ == '__main__':
@@ -122,31 +110,15 @@ if __name__ == '__main__':
     for k, v in PARSER.__dict__.items():
         print(f'{k}\t\t{v}')
 
-    # print('Types:')
-    # print(f'{PARSER.types}')
-
-    # print('\n\n')
-    # print('Actions:')
-    # for a in PARSER.actions:
-    #     print(f'{a}')
-    #     print(f'pos_pre: {a.positive_preconditions}\n\n')
-
-    # print('Predicates:', PARSER.predicates)
     print('\n\n\n')
 
     init_state = PARSER.state
 
+    print(f'Initial State:\n{init_state}')
+    print(f'Pos Precond: {PARSER.positive_goals}')
+    print(f'Neg Precond: {PARSER.negative_goals}\n\n')
 
-    # # Test get_valid_actions
-    # va = get_valid_actions(init_state, PARSER.actions)
-    # print(f'Init State: {init_state}')
-    # print('Valid Actions:')
-    # for i, a in enumerate(va):
-    #     print(i, *a, '\n\n')
-
-
-    print(f'Initial State:\n{init_state}\n\n')
-    result = bfs(init_state, PARSER.positive_goals)
+    result = bfs(init_state, PARSER.positive_goals, PARSER.negative_goals)
     for i, (action, params) in enumerate(result):
         print(f'Action {i}:\n{action}')
         print(f'Params:\n{params}')
