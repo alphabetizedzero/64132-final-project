@@ -7,8 +7,9 @@ import numpy as np
 
 sys.path.extend(os.path.abspath(os.path.join(os.getcwd(), d)) for d in ['pddlstream', 'ss-pybullet'])
 
-from pybullet_tools.utils import set_pose, Pose, Point, Euler, multiply, get_pose, get_point, create_box, set_all_static, WorldSaver, create_plane, COLOR_FROM_NAME, stable_z_on_aabb, pairwise_collision, elapsed_time, get_aabb_extent, get_aabb, create_cylinder, set_point, get_function_name, wait_for_user, dump_world, set_random_seed, set_numpy_seed, get_random_seed, get_numpy_seed, set_camera, set_camera_pose, link_from_name, get_movable_joints, get_joint_name, get_distance
+from pybullet_tools.utils import set_pose, Pose, Point, Euler, multiply, get_pose, get_point, create_box, set_all_static, WorldSaver, create_plane, COLOR_FROM_NAME, stable_z_on_aabb, pairwise_collision, elapsed_time, get_aabb_extent, get_aabb, create_cylinder, set_point, get_function_name, wait_for_user, dump_world, set_random_seed, set_numpy_seed, get_random_seed, get_numpy_seed, set_camera, set_camera_pose, link_from_name, get_movable_joints, get_joint_name
 from pybullet_tools.utils import CIRCULAR_LIMITS, get_custom_limits, set_joint_positions, interval_generator, get_link_pose, interpolate_poses
+from pybullet_tools.utils import joints_from_names, get_distance, clone_body, remove_body, get_links, dump_body
 
 from pybullet_tools.ikfast.franka_panda.ik import PANDA_INFO, FRANKA_URDF
 from pybullet_tools.ikfast.ikfast import get_ik_joints, closest_inverse_kinematics
@@ -21,7 +22,13 @@ from src.utils import JOINT_TEMPLATE, BLOCK_SIZES, BLOCK_COLORS, COUNTERS, \
 
 UNIT_POSE2D = (0., 0., 0.)
 
+# NOTE: Other than RRT, other functions are for test purposes
+
 def rrt(world, start_pose, end_pose):
+	"""
+	inputs: world (Enviroment), start pose: Pose, end pose: Pose
+	output: list of Poses from start pose to end pose
+	"""
     def pose_to_key(pose):
         return tuple([tuple(pose[0]), tuple(pose[1])])
 
@@ -30,9 +37,10 @@ def rrt(world, start_pose, end_pose):
             conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
             if conf is None:
                 return True
-            set_joint_positions(world.robot, ik_joints, conf)
+            set_joint_positions(sub_robot, ik_joints, conf)
             for obs in world.static_obstacles:
-                if pairwise_collision(world.robot, obs):
+                if pairwise_collision(sub_robot, obs):
+                    print('Collide with', obs)
                     return True
         return False
 
@@ -66,15 +74,18 @@ def rrt(world, start_pose, end_pose):
 
     V = {pose_to_key(start_pose)}
     E = dict()
-    sample_fn = get_sample_fn(world.robot, world.arm_joints)
+    sub_robot = clone_body(world.robot, visual=False, collision=False)
+    # sub_robot = world.robot
+    sub_arm_joints = world.arm_joints
+    sample_fn = get_sample_fn(sub_robot, sub_arm_joints)
     tool_link = link_from_name(world.robot, 'panda_hand')
     ik_joints = get_ik_joints(world.robot, PANDA_INFO, tool_link)
     for i in range(100000):
         goal_sample = np.random.uniform()
         if goal_sample < .95:
             conf = sample_fn()
-            set_joint_positions(world.robot, world.arm_joints, conf)
-            x_random = get_link_pose(world.robot, tool_link)
+            set_joint_positions(sub_robot, sub_arm_joints, conf)
+            x_random = get_link_pose(sub_robot, tool_link)
         else:
             x_random = end_pose
             print('get end_pose at', i)
@@ -88,7 +99,9 @@ def rrt(world, start_pose, end_pose):
                 if distance(point_from_pose(end_pose), point_from_pose(x_new)) < 0.01:
                     sol = path_maker(E, x_new, start_pose)
                     sol.append(end_pose)
+                    remove_body(sub_robot)
                     return sol
+    remove_body(sub_robot)
     return None
 
 
@@ -126,6 +139,8 @@ def main():
     sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
     spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
     world._update_initial()
+    goal_pos = translate_linearly(world, 1.2)  # does not do any collision checking!!
+    set_joint_positions(world.robot, world.base_joints, goal_pos)
     tool_link = link_from_name(world.robot, 'panda_hand')
     ik_joints = get_ik_joints(world.robot, PANDA_INFO, tool_link)
 
@@ -140,10 +155,11 @@ def main():
     end_pose = get_link_pose(world.robot, tool_link)
     print('End Pose')
     wait_for_user()
+    set_joint_positions(world.robot, world.arm_joints, conf_start)
+    print('Start at start pose')
     paths = rrt(world, start_pose, end_pose)
     print(len(paths), paths)
-    set_joint_positions(world.robot, world.arm_joints, conf_start)
-    print('Start Pose')
+    print("Find solution")
     wait_for_user()
     sp = paths[0]
     for ep in paths[1:]:
