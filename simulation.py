@@ -23,6 +23,7 @@ from src.utils import JOINT_TEMPLATE, BLOCK_SIZES, BLOCK_COLORS, COUNTERS, \
 
 import time
 from bfs_planner import generate_plan
+from robot_commands import *
 
 UNIT_POSE2D = (0., 0., 0.)
 
@@ -52,12 +53,15 @@ def main():
     sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
     spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
 
+    # wait_for_user()
+
+    move_robot_base(world, [3, 3])
     wait_for_user()
 
-    for i in range(100):
-        goal_pos = translate_linearly(world, 0.01) # does not do any collision checking!!
-        set_joint_positions(world.robot, world.base_joints, goal_pos)
-        time.sleep(0.1)
+    # for i in range(100):
+    #     goal_pos = translate_linearly(world, 0.01) # does not do any collision checking!!
+    #     set_joint_positions(world.robot, world.base_joints, goal_pos)
+    #     time.sleep(0.1)
 
 
 if __name__ == '__main__':
