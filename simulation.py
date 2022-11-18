@@ -47,6 +47,20 @@ add_sugar_box = lambda world, **kwargs: add_ycb(world, 'sugar_box', **kwargs)
 add_spam_box = lambda world, **kwargs: add_ycb(world, 'potted_meat_can', **kwargs)
 
 
+def execute_plan(world, plan, action_impls):
+    '''
+    Execution engine responsible for executing the plan in the simulation environment
+
+    @param world: the simulation environment
+    @param plan: a list of tuples :(PDDLParser Action, dict(param_name (str) : param_value(str)))
+    @param action_impls: a dictionary mapping action names (strings) to functions that implement them. The implementation
+    functions should take arguments: world, dict(param_name (str) : param_value(str))
+    '''
+
+    for action, params in plan:
+        action_impls[action](world, params)
+
+
 def main():
     
     world = World(use_gui=True)
