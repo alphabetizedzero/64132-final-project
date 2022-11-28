@@ -25,10 +25,12 @@ UNIT_POSE2D = (0., 0., 0.)
 # NOTE: Other than RRT, other functions are for test purposes
 
 def rrt(world, start_pose, end_pose):
-	"""
-	inputs: world (Enviroment), start pose: Pose, end pose: Pose
-	output: list of Poses from start pose to end pose
-	"""
+    """
+    inputs: world (Enviroment), start pose: Pose, end pose: Pose
+    output: list of Poses from start pose to end pose
+    """
+
+
     def pose_to_key(pose):
         return tuple([tuple(pose[0]), tuple(pose[1])])
 
