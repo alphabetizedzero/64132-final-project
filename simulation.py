@@ -22,7 +22,7 @@ from src.utils import JOINT_TEMPLATE, BLOCK_SIZES, BLOCK_COLORS, COUNTERS, \
 
 
 import time
-from bfs_planner import generate_plan
+import bfs_planner
 from robot_commands import *
 
 UNIT_POSE2D = (0., 0., 0.)
@@ -47,35 +47,65 @@ add_sugar_box = lambda world, **kwargs: add_ycb(world, 'sugar_box', **kwargs)
 add_spam_box = lambda world, **kwargs: add_ycb(world, 'potted_meat_can', **kwargs)
 
 
-def execute_plan(world, plan, action_impls):
+def execute_plan(world, locations, plan, action_impls):
     '''
     Execution engine responsible for executing the plan in the simulation environment
 
     @param world: the simulation environment
+    @param locations: a dict(location_name (str): location_coords (1x3 np.array))
     @param plan: a list of tuples :(PDDLParser Action, dict(param_name (str) : param_value(str)))
     @param action_impls: a dictionary mapping action names (strings) to functions that implement them. The implementation
-    functions should take arguments: world, dict(param_name (str) : param_value(str))
+    functions should take arguments: world, locations, dict(param_name (str) : param_value(str))
     '''
 
-    for action, params in plan:
-        action_impls[action](world, params)
+    for i, (action, params) in enumerate(plan):
+
+        if action.name not in action_impls:
+            print(f'No implementation found for {action.name}. Skipping...')
+            continue
+
+        print(f'\t\t{i}\tExecuting action {action.name} with parameters {params}')
+        action_impls[action.name](world, locations, params)
 
 
 def main():
+
+    # TODO: add in all locations
+    locations = {
+        # Base locations should be (1x2) np.arrays (x, y)
+        'robot-base-grasp-sugar': None,  # Location of the base before grasping the sugar
+        'robot-base-drop-sugar': None,  # Location of the base before dropping the sugar
+        'robot-base-grasp-spam': None,  # Location of the base before grasping the spam
+        'robot-base-drop-spam': None,  # Location of the base before dropping the spam
+
+        # Arm locations should be Pose objects
+        # TODO: not sure if the position coordinates should be relative to the base or normal world coordinates
+        'robot-arm-home': None,  # Pose of the arm when stowed
+        'robot-arm-grasp-sugar': None,  # Pose of the arm before grasping the sugar
+        'robot-arm-drop-sugar': None,  # Pose of the arm before dropping the sugar
+        'robot-arm-grasp-spam': None,  # Pose of the arm before grasping the spam
+        'robot-arm-drop-spam': None,  # Pose of the arm before dropping the spam
+    }
+
+    action_impls = {
+        'move-robot-base': action_move_robot_base,
+    }
+
+    plan = bfs_planner.generate_plan('domain.pddl', 'problem.pddl')
+
     
     world = World(use_gui=True)
+    world._update_initial()
+
     sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
     spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
 
-    # wait_for_user()
-
-    move_robot_base(world, [3, 3])
+    print('Started')
     wait_for_user()
+    execute_plan(world, locations, plan, action_impls)
 
-    # for i in range(100):
-    #     goal_pos = translate_linearly(world, 0.01) # does not do any collision checking!!
-    #     set_joint_positions(world.robot, world.base_joints, goal_pos)
-    #     time.sleep(0.1)
+    print('Done!')
+    wait_for_user()
 
 
 if __name__ == '__main__':
