@@ -24,6 +24,7 @@ from src.utils import JOINT_TEMPLATE, BLOCK_SIZES, BLOCK_COLORS, COUNTERS, \
 import time
 import bfs_planner
 from robot_commands import *
+from rrt_draft import *
 
 UNIT_POSE2D = (0., 0., 0.)
 
@@ -68,24 +69,7 @@ def execute_plan(world, locations, plan, action_impls):
         action_impls[action.name](world, locations, params)
 
 
-def main():
-
-    # TODO: add in all locations
-    locations = {
-        # Base locations should be (1x2) np.arrays (x, y)
-        'robot-base-grasp-sugar': None,  # Location of the base before grasping the sugar
-        'robot-base-drop-sugar': None,  # Location of the base before dropping the sugar
-        'robot-base-grasp-spam': None,  # Location of the base before grasping the spam
-        'robot-base-drop-spam': None,  # Location of the base before dropping the spam
-
-        # Arm locations should be Pose objects
-        # TODO: not sure if the position coordinates should be relative to the base or normal world coordinates
-        'robot-arm-home': None,  # Pose of the arm when stowed
-        'robot-arm-grasp-sugar': None,  # Pose of the arm before grasping the sugar
-        'robot-arm-drop-sugar': None,  # Pose of the arm before dropping the sugar
-        'robot-arm-grasp-spam': None,  # Pose of the arm before grasping the spam
-        'robot-arm-drop-spam': None,  # Pose of the arm before dropping the spam
-    }
+def main():   
 
     action_impls = {
         'move-robot-base': action_move_robot_base,
@@ -96,10 +80,26 @@ def main():
     
     world = World(use_gui=True)
     world._update_initial()
-
+    # TODO: test the locations
     sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
     spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
+    locations = {
+        # Base locations should be (1x2) np.arrays (x, y)
+        'robot-base-grasp-sugar': np.array([0.8 , 3.142]),  # Location of the base before grasping the sugar
+        'robot-base-drop-sugar': np.array([0.8 , 3.142]),  # Location of the base before dropping the sugar
+        'robot-base-grasp-spam': np.array([0.8 , 3.142]),  # Location of the base before grasping the spam
+        'robot-base-drop-spam': np.array([0.8 , 3.142]),  # Location of the base before dropping the spam
+        'robot-base-grasp-drawer': np.array([0.8 , 3.142]),  # Location of the base before grasping the drawer handle
+        'robot-base-drop-drawer': np.array([1.1 , 3.142]),  # Location of the base before dropping the drawer handle
 
+        # Arm locations should be Pose objects
+        'robot-arm-home': get_link_pose(world.robot, tool_link),  # Pose of the arm when stowed
+        'robot-arm-grasp-sugar': get_box_pose(world, sugar_box),  # Pose of the arm before grasping the sugar
+        'robot-arm-drop-sugar': Pose(get_part_pose('kitchen_part_right', 'indigo_countertop')[0][:2] + [-0.25]),  # Pose of the arm before dropping the sugar
+        'robot-arm-grasp-spam': get_box_pose(world, spam_box),  # Pose of the arm before grasping the spam
+        'robot-arm-drop-spam': Pose(np.array(get_part_pose('kitchen_part_right', 'indigo_drawer_handle_top')[0][:2]+[-0.35])),  # Pose of the arm before dropping the spam
+        'robot-arm-grasp-drawer': get_part_pose('kitchen_part_right', 'indigo_drawer_handle_top'),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
+    }
     print('Started')
     wait_for_user()
     execute_plan(world, locations, plan, action_impls)

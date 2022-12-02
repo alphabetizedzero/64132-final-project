@@ -23,25 +23,13 @@ from src.utils import JOINT_TEMPLATE, BLOCK_SIZES, BLOCK_COLORS, COUNTERS, \
 UNIT_POSE2D = (0., 0., 0.)
 
 def get_box_pose(world, box):
-    '''
-    Input: the world and an object id (string from dump_world())
-    Output: Pose of the object
-    '''
     return get_pose(world.get_body(box))
 
 def get_part_pose(body_name, link_name):
-    '''
-    Input: an object id (string from dump_world()) and a part id (string from dump_world())
-    Output: Pose of the part
-    '''
     body = body_from_name(body_name)
     return get_link_pose(body, link_from_name(body, link_name))
 
 def rrt(world, start_pose, end_pose):
-    '''
-    Input: the world (Enviroment), start_pose: Pose of the robot, end_pose: Pose of the target pose's gripper
-    Output: list of Poses for the gripper from start_pose to end_pose
-    '''
     def pose_to_key(pose):
         return tuple([tuple(pose[0]), tuple(pose[1])])
 
