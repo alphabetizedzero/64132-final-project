@@ -87,7 +87,7 @@ def rrt(world, start_pose, end_pose):
 
     V = {pose_to_key(start_pose)}
     E = dict()
-    sub_robot = clone_body(world.robot, visual=False, collision=False)
+    sub_robot = clone_body(world.robot, visual=False, collision=True)
     # sub_robot = world.robot
     sub_arm_joints = world.arm_joints
     sample_fn = get_sample_fn(sub_robot, sub_arm_joints)
@@ -95,7 +95,7 @@ def rrt(world, start_pose, end_pose):
     ik_joints = get_ik_joints(world.robot, PANDA_INFO, tool_link)
     for i in range(100000):
         goal_sample = np.random.uniform()
-        if goal_sample < .95:
+        if goal_sample < .8:
             conf = sample_fn()
             set_joint_positions(sub_robot, sub_arm_joints, conf)
             x_random = get_link_pose(sub_robot, tool_link)
