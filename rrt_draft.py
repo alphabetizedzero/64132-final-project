@@ -37,16 +37,19 @@ def get_part_pose(body_name, link_name):
     body = body_from_name(body_name)
     return get_link_pose(body, link_from_name(body, link_name))
 
-def rrt(world, start_pose, end_pose):
+def rrt(world, start_pose, start_joint_conf, end_pose):
     '''
     Input: the world (Enviroment), start_pose: Pose of the robot, end_pose: Pose of the target pose's gripper
     Output: list of Poses for the gripper from start_pose to end_pose
     '''
+
+    start_joint_conf = tuple(start_joint_conf)
+
     def pose_to_key(pose):
         return tuple([tuple(pose[0]), tuple(pose[1])])
 
     def collision_check(start_pose, end_pose):
-        for pose in interpolate_poses(start_pose, end_pose, pos_step_size=0.01):
+        for pose in interpolate_poses(start_pose, end_pose, pos_step_size=0.2):
             conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
             if conf is None:
                 return True
@@ -63,7 +66,7 @@ def rrt(world, start_pose, end_pose):
     def nearest(verts, pos):
         min_dis = float('inf')
         closest = None
-        for i in verts:
+        for i, joint_confs in verts:
             dis = distance(i[0], point_from_pose(pos))
             if dis < min_dis:
                 min_dis = dis
@@ -85,7 +88,7 @@ def rrt(world, start_pose, end_pose):
         next(pose)
         return next(pose)
 
-    V = {pose_to_key(start_pose)}
+    V = {(pose_to_key(start_pose), start_joint_conf)}  # Each node in the graph is a tuple of (pose_key, joint_configuration tuple)
     E = dict()
     sub_robot = clone_body(world.robot, visual=False, collision=True)
     # sub_robot = world.robot
@@ -94,21 +97,30 @@ def rrt(world, start_pose, end_pose):
     tool_link = link_from_name(world.robot, 'panda_hand')
     ik_joints = get_ik_joints(world.robot, PANDA_INFO, tool_link)
     for i in range(100000):
-        goal_sample = np.random.uniform()
-        if goal_sample < .8:
-            conf = sample_fn()
-            set_joint_positions(sub_robot, sub_arm_joints, conf)
-            x_random = get_link_pose(sub_robot, tool_link)
-        else:
-            x_random = end_pose
-            print('get end_pose at', i)
+        # goal_sample = np.random.uniform()
+        # if goal_sample < .8:
+        #     conf = sample_fn()
+        #     set_joint_positions(sub_robot, sub_arm_joints, conf)
+        #     x_random = get_link_pose(sub_robot, tool_link)
+        # else:
+        #     # TODO: calculate conf for end pose
+        #     x_random = end_pose
+        #     print('get end_pose at', i)
+
+        #     x_new = steer(nearest_node, x_random, 0.1)
+
+        # Temporarily not sampling end_pose for testing
+        conf = sample_fn()
+        set_joint_positions(sub_robot, sub_arm_joints, conf)
+        x_random = get_link_pose(sub_robot, tool_link)
 
         if pose_to_key(x_random) not in E.keys():
             nearest_node = nearest(V, x_random)
             x_new = steer(nearest_node, x_random, 0.1)
             if not collision_check(nearest_node, x_new):
-                V.add(pose_to_key(x_new))
-                E[pose_to_key(x_new)] = nearest_node
+                new_V = pose_to_key(x_new), tuple(conf)
+                V.add(new_V)
+                E[new_V] = nearest_node
                 if distance(point_from_pose(end_pose), point_from_pose(x_new)) < 0.01:
                     sol = path_maker(E, x_new, start_pose)
                     sol.append(end_pose)
@@ -176,7 +188,13 @@ def main():
     wait_for_user()
     set_joint_positions(world.robot, world.arm_joints, conf_start)
     print('Start at start pose')
-    paths = rrt(world, start_pose, end_pose)
+
+    paths = rrt(world, start_pose, ik_joints, end_pose)
+
+    print(f'Found path with {len(path)} steps:')
+    for i, (pose, joint_conf) in enumerate(paths):
+        print(f'Step {i}\n\tpose: {pose}\n\tjoint_conf: {joint_conf}')
+
     print(len(paths), paths)
     print("Find solution")
     wait_for_user()
