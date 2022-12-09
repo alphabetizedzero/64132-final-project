@@ -74,6 +74,8 @@ are the constraints.
 
 The constraints for the trajectory optimization is by checking if a position collides with any other objects in the world, and would return a 1 if there is no collision, and 0 if there is a collision. This is then turned into a constraint where the constraint function value is between [0.9, 1.1] in order to be valid.
 
+The decision variables that are being solved for are the configuration angles of the robot arm joints along the path.
+
 Using the Solve function in pyDrake, one can get an optimized path.
 
 [INSERT VIDEO HERE]
