@@ -76,29 +76,26 @@ def main():
     }
 
     plan = bfs_planner.generate_plan('domain.pddl', 'problem.pddl')
-
-    
     world = World(use_gui=True)
     world._update_initial()
-    # TODO: test the locations
     sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
     spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
     locations = {
         # Base locations should be (1x2) np.arrays (x, y)
-        'robot-base-grasp-sugar': np.array([0.8 , 3.142]),  # Location of the base before grasping the sugar
-        'robot-base-drop-sugar': np.array([0.8 , 3.142]),  # Location of the base before dropping the sugar
-        'robot-base-grasp-spam': np.array([0.8 , 3.142]),  # Location of the base before grasping the spam
-        'robot-base-drop-spam': np.array([0.8 , 3.142]),  # Location of the base before dropping the spam
-        'robot-base-grasp-drawer': np.array([0.8 , 3.142]),  # Location of the base before grasping the drawer handle
-        'robot-base-drop-drawer': np.array([1.1 , 3.142]),  # Location of the base before dropping the drawer handle
+        'robot-base-grasp-sugar': np.array([0.7, 0.65, np.pi / 2]),  # Location of the base before grasping the sugar
+        'robot-base-drop-sugar': np.array([0.7, 0.65, np.pi / 2]),  # Location of the base before dropping the sugar
+        'robot-base-grasp-spam': np.array([0.7, 0.65, np.pi / 2]),  # Location of the base before grasping the spam
+        'robot-base-drop-spam': np.array([0.7, 0.65, np.pi / 2]),  # Location of the base before dropping the spam
+        'robot-base-open-drawer': np.array([0.7, 0.65, np.pi / 2]),  # Location of the base before grasping the drawer handle
 
         # Arm locations should be Pose objects
-        'robot-arm-home': get_link_pose(world.robot, tool_link),  # Pose of the arm when stowed
-        'robot-arm-grasp-sugar': get_box_pose(world, sugar_box),  # Pose of the arm before grasping the sugar
-        'robot-arm-drop-sugar': Pose(get_part_pose('kitchen_part_right', 'indigo_countertop')[0][:2] + [-0.25]),  # Pose of the arm before dropping the sugar
-        'robot-arm-grasp-spam': get_box_pose(world, spam_box),  # Pose of the arm before grasping the spam
-        'robot-arm-drop-spam': Pose(np.array(get_part_pose('kitchen_part_right', 'indigo_drawer_handle_top')[0][:2]+[-0.35])),  # Pose of the arm before dropping the spam
-        'robot-arm-grasp-drawer': get_part_pose('kitchen_part_right', 'indigo_drawer_handle_top'),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
+        'robot-arm-home': get_link_pose(world.robot, link_from_name(world.robot, 'panda_hand')),  # Pose of the arm when stowed
+        'robot-arm-grasp-sugar': Pose([-0.109, 0.741, -0.444], [0, -np.pi/2, np.pi/4]),  # Pose of the arm before grasping the sugar
+        'robot-arm-drop-sugar': Pose([0.051, 1.318, -0.444], [0, -np.pi / 2, 0]),  # Pose of the arm before dropping the sugar
+        'robot-arm-grasp-spam': Pose([0.192, 1.058, -0.341], [np.pi, 0, np.pi/4]),  # Pose of the arm before grasping the spam
+        'robot-arm-drop-spam': Pose([0.501, 1.211, -0.544], [np.pi, 0, 0]),  # Pose of the arm before dropping the spam
+        'robot-arm-open-drawer': Pose([0.428, 1.211, -0.654], [np.pi/2, 0, -np.pi/2]),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
+        'robot-arm-opened-drawer': Pose([0.628, 1.211, -0.654], [np.pi/2, 0, -np.pi/2]),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
     }
     print('Started')
     wait_for_user()
