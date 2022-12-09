@@ -47,3 +47,41 @@ The BFS planner outputs a list of actions some of which are motion actions betwe
 For the actions that involve moving the robot base between different points, we make the assumption that the floor is clear with no obstacles that could cause a collision. This assumption allows us to move the base in straight line paths directly between points without more complex motion planning.
 
 Moving the arm is more complicated because there are objects that could be in the way of the arm. For these actions, we will use RRT to determine a path between points that does not intersect any objects in the world.
+
+## Trajectory Optimization
+
+### What's where
+
+ * trajectory_optimization.py: Implementation of trajectory optimization, specifically the `trajectory_optimization` function
+
+### Explanation
+
+First, we decide on a way to optimizing the path. In this case, we decide to optimize the distance travelled by the gripper from a start position to an end position, as the less distance the gripper travels, the less time it would take to get from the start position to the end position.
+
+As such, the cost function of the optimization is the path length of the gripper's path. The goal is to minimize the total distance.
+
+$$\min_{q_k,\\ k \in {0, 1, ... N}}\quad \sum_{j=0}^{N-1} | q_{j+1}- q_j|_2^2$$
+
+where
+
+$$ q_0 = q_{start}$$
+
+$$ q_N =q_{goal} $$
+
+$$\text{no collision}(q_n) \in [0.9, 1.1] \\ \forall n$$
+
+are the constraints.
+
+The constraints for the trajectory optimization is by checking if a position collides with any other objects in the world, and would return a 1 if there is no collision, and 0 if there is a collision. This is then turned into a constraint where the constraint function value is between [0.9, 1.1] in order to be valid.
+
+Using the Solve function in pyDrake, one can get an optimized path.
+
+[INSERT VIDEO HERE]
+
+In the video, the blue line is the path of the sample based motion planner (RRT), while the green line is the one produced by the trajectory optimization.
+
+The trajectory optimization chooses the path with the shortest distance, but takes longer to compute than RRT.
+
+
+
+
