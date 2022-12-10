@@ -78,7 +78,7 @@ The decision variables that are being solved for are the configuration angles of
 
 Using the Solve function in pyDrake, one can get an optimized path.
 
-[INSERT VIDEO HERE]
+https://user-images.githubusercontent.com/100317617/206828805-700ff410-19e4-4689-acf6-0063a8a2b874.mp4
 
 In the video, the blue line is the path of the sample based motion planner (RRT), while the green line is the one produced by the trajectory optimization.
 
