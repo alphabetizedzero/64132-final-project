@@ -109,10 +109,9 @@ def main():
         'robot-arm-opened-drawer': Pose([0.628, 1.211, -0.654], [np.pi/2, 0, -np.pi/2]),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
     }
 
-
     execute_plan(world, locations, plan, action_impls)
 
-
+    wait_for_user()
 
 
 
