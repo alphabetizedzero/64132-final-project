@@ -23,11 +23,23 @@ def rotate_robot_base(world, target_heading, angular_speed=1):
 
     x, y, current_heading = get_joint_positions(world.robot, world.base_joints)
 
+    target_heading = target_heading % (2*np.pi)
+    current_heading = current_heading % (2*np.pi)
+
+    # print(f'target_heading = {target_heading}')
+    # print(f'current_heading = {current_heading}')
+
     step_size = angular_speed * _TIME_STEP  # step size in rad/step
     direction = np.sign(target_heading - current_heading)
 
+    # print(f'step_size: {step_size}')
+    # print(f'direction: {direction}')
+
     while abs(current_heading - target_heading) > step_size:
         current_heading += direction * step_size
+
+        # print(f'\tcurrent_heading: {current_heading}')
+        # print(f'\tabs(current_heading - target_heading): {abs(current_heading - target_heading)}')
 
         pos = np.array([x, y, current_heading])
 
@@ -53,6 +65,7 @@ def move_robot_base(world, target_position, translation_v=1.5, angular_v=2):
     target_x, target_y, final_heading = target_position[0:3]
 
     target_heading = np.arctan((target_y - y) / (target_x - x)) - np.pi
+    target_heading = target_heading % (2*np.pi)
 
     rotate_robot_base(world, target_heading, angular_v)  # First rotate the robot to be pointing the right way so the motion looks correct
 
