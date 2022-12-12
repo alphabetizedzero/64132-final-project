@@ -48,30 +48,28 @@ def trajectory_optimization(world, paths):
     def cost_func(z):
         # function to be minimized, z is the data from the solver
         distance = 0
-        sp = paths[0]
+        conf = [(z[j]).value() for j in range(7)]
+        set_joint_positions(sub_robot, ik_joints, conf)
+        sp = get_link_pose(sub_robot, tool_link)
         for i in range(1, len(paths)):
-            if i < len(paths) - 1:
-                # gets configuration from data
-                conf = [(z[(i-1)*7+j]).value() for j in range(7)]
-                set_joint_positions(sub_robot, ik_joints, conf)
-                ep = get_link_pose(sub_robot, tool_link)
-            else:
-                ep = paths[-1]
+            # gets configuration from data
+            conf = [(z[i*7+j]).value() for j in range(7)]
+            set_joint_positions(sub_robot, ik_joints, conf)
+            ep = get_link_pose(sub_robot, tool_link)
             distance += get_distance(point_from_pose(sp), point_from_pose(ep))
             sp = ep
         return AutoDiffXd(distance)
 
     def constraint_func(z):
         # makes sure there are no obstacles in the path
-        sp = paths[0]
-        for i in range(len(paths) - 1):
-            if i < len(paths) - 2:
-                # gets configuration from data
-                conf = [(z[i * 7 + j]).value() for j in range(7)]
-                set_joint_positions(sub_robot, ik_joints, conf)
-                ep = get_link_pose(sub_robot, tool_link)
-            else:
-                ep = paths[-1]
+        conf = [(z[j]).value() for j in range(7)]
+        set_joint_positions(sub_robot, ik_joints, conf)
+        sp = get_link_pose(sub_robot, tool_link)
+        for i in range(1, len(paths)):
+            # gets configuration from data
+            conf = [(z[i * 7 + j]).value() for j in range(7)]
+            set_joint_positions(sub_robot, ik_joints, conf)
+            ep = get_link_pose(sub_robot, tool_link)
             for pose in interpolate_poses(sp, ep, pos_step_size=0.01):
                 conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
                 if conf is None:
@@ -81,28 +79,34 @@ def trajectory_optimization(world, paths):
                     if pairwise_collision(sub_robot, obs):
                         print('Collide with', obs)
                         return np.array([AutoDiffXd(0.0)])
+            sp = ep
         return np.array([AutoDiffXd(1.0)])
 
-    prog = MathematicalProgram()
-    q = prog.NewContinuousVariables((len(paths)-2) * 7, "q")
-    prog.AddConstraint(constraint_func, lb=np.array([0.9]), ub=np.array([1.1]), vars=q)
-    prog.AddCost(cost_func, vars=q)
     q0 = []
-    for conf in confs[1:-1]:
+    for conf in confs:
         if conf is None:
             conf = [0.0] * 7
         for c in conf:
             q0.append(c)
     q0 = np.array(q0)
+    lower_limits, upper_limits = get_custom_limits(world.robot, world.arm_joints, circular_limits=CIRCULAR_LIMITS)
+    prog = MathematicalProgram()
+    # setting the decision variables, constraints, and cost function
+    q = prog.NewContinuousVariables(len(paths) * 7, "q")
+    prog.AddBoundingBoxConstraint(confs[0], confs[0], q[0:7])
+    prog.AddBoundingBoxConstraint(confs[-1], confs[-1], q[7*(len(paths)-1):])
+    for i in range(1, len(paths)-1):
+        prog.AddBoundingBoxConstraint(lower_limits, upper_limits, q[7*i:(i+1)*7])
+    prog.AddConstraint(constraint_func, lb=np.array([0.9]), ub=np.array([1.1]), vars=q)
+    prog.AddCost(cost_func, vars=q)
     result = Solve(prog)
     if result.is_success():
-        optimized_paths = [paths[0]]
+        optimized_paths = []
         q_sol = result.GetSolution(q)
-        for i in range(len(paths) - 2):
+        for i in range(len(paths)):
             conf_sol = [q_sol[i * 7 + j] for j in range(7)]
             set_joint_positions(sub_robot, ik_joints, conf_sol)
             optimized_paths.append(get_link_pose(sub_robot, tool_link))
-        optimized_paths.append(paths[-1])
         remove_body(sub_robot)
         return optimized_paths
     print('No solution for optimization')
