@@ -122,6 +122,13 @@ def main():
 
 def examples():
 
+    world = World(use_gui=True)
+    world._update_initial()
+
+    sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
+    spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
+
+
     ######################################################################
     # Example (working): move arm small amount far from objects
     ######################################################################
@@ -171,8 +178,6 @@ def examples():
     # wait_for_user()
     ######################################################################
     ######################################################################
-
-    pass
 
 
 
