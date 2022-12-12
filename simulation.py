@@ -79,16 +79,15 @@ def main():
         'pick-up-sugar': action_pick_up_sugar,
     }
 
-    # plan = bfs_planner.generate_plan('domain.pddl', 'problem.pddl')
-    # plan = plan[:2]
-
+    plan = bfs_planner.generate_plan('domain.pddl', 'problem.pddl')
+    print(f'Generated plan with {len(plan)} steps')
 
 
 
     world = World(use_gui=True)
     world._update_initial()
 
-    # sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
+    sugar_box = add_sugar_box(world, idx=0, counter=1, pose2d=(-0.2, 0.65, np.pi / 4))
     spam_box = add_spam_box(world, idx=1, counter=0, pose2d=(0.2, 1.1, np.pi / 4))
 
 
@@ -109,20 +108,19 @@ def main():
         'robot-arm-open-drawer': Pose([0.428, 1.211, -0.654], [np.pi/2, 0, -np.pi/2]),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
         'robot-arm-opened-drawer': Pose([0.628, 1.211, -0.654], [np.pi/2, 0, -np.pi/2]),  # Pose of the arm before grasping the drawer, opening drawer can be handled by the robot base moving back? TODO discuss
     }
-    # print('Started')
-    # wait_for_user()
-    # execute_plan(world, locations, plan, action_impls)
-    
 
-    tool_link = link_from_name(world.robot, 'panda_hand')
 
-    ik_joints = get_ik_joints(world.robot, PANDA_INFO, tool_link)
-    # target_arm_pose = get_box_pose(world, sugar_box)
+    execute_plan(world, locations, plan, action_impls)
 
-    # print(f'base_position: {target_base_position}')  # [0.8 0.5]
-    # print(f'current_arm_pose: {get_link_pose(world.robot, tool_link)}')  # ((0.4457971751689911, 0.49528664350509644, -0.24738281965255737), (-0.026103319600224495, 0.9215595126152039, 0.00632764957845211, -0.38730689883232117))
-    # print(f'target_arm_pose: {target_arm_pose}')  # ((-0.2, 0.65, -0.5440309999995807), (0.0, 0.0, 0.38268343236508984, 0.9238795325112867))
 
+
+
+
+
+
+
+
+def examples():
 
     ######################################################################
     # Example (working): move arm small amount far from objects
@@ -174,8 +172,8 @@ def main():
     ######################################################################
     ######################################################################
 
+    pass
 
-    # plan_cartesian_motion in pybullet tools
 
 
 if __name__ == '__main__':

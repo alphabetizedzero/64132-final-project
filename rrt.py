@@ -37,14 +37,16 @@ def get_part_pose(body_name, link_name):
     body = body_from_name(body_name)
     return get_link_pose(body, link_from_name(body, link_name))
 
+
 def _pose_format_correct(pose):
     if not isinstance(pose, tuple): return False
     if not len(pose) == 2: return False
-    if not all(isinstance(x, tuple) for x in pose): return False
+    if not all(isinstance(x, (tuple, list)) for x in pose): return False
     if not len(pose[0]) == 3: return False
     if not len(pose[1]) == 4: return False
 
     return True
+
 
 def rrt(world, start_pose, start_joint_conf, end_pose):
     '''

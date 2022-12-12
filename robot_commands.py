@@ -74,17 +74,6 @@ def move_robot_base(world, target_position, translation_v=1.5, angular_v=2):
     rotate_robot_base(world, final_heading, angular_v)
 
 
-def _get_sample_fn(body, joints, custom_limits={}, **kwargs):
-    '''
-    Copied from minimal_example.py
-    '''
-    lower_limits, upper_limits = get_custom_limits(body, joints, custom_limits, circular_limits=CIRCULAR_LIMITS)
-    generator = interval_generator(lower_limits, upper_limits, **kwargs)
-    def fn():
-        return tuple(next(generator))
-    return fn
-
-
 def move_robot_arm(world, target_pose):
     '''
     Blocking, moves the robot end effector to the target_pose
@@ -130,7 +119,6 @@ def move_robot_arm(world, target_pose):
 #
 ################################################################
 
-_HOME_HEADING = np.pi  # Heading to return to after moving the base
 
 def action_move_robot_base(world, locations, params):
     '''
@@ -147,7 +135,6 @@ def action_move_robot_base(world, locations, params):
     target_position = locations[params['?to-zone']]
 
     move_robot_base(world, target_position)
-    rotate_robot_base(world, _HOME_HEADING)
 
 
 def action_pick_up_sugar(world, locations, params):
