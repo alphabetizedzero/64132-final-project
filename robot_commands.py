@@ -8,9 +8,11 @@ from pybullet_tools.ikfast.ikfast import get_ik_joints, closest_inverse_kinemati
 
 import time
 
+from rrt import rrt
+
 _TIME_STEP = 0.1  # Update period in seconds
 
-def rotate_robot_base(world, target_heading, angular_speed=0.5):
+def rotate_robot_base(world, target_heading, angular_speed=1):
     '''
     Blocking, rotates the robot base to be pointing at the target heading
 
@@ -35,12 +37,12 @@ def rotate_robot_base(world, target_heading, angular_speed=0.5):
     set_joint_positions(world.robot, world.base_joints, np.array([x, y, target_heading]))
 
 
-def move_robot_base(world, target_position, translation_v=1, angular_v=1):
+def move_robot_base(world, target_position, translation_v=1.5, angular_v=2):
     '''
     Blocking, moves the robot base to the target position
 
     @param world: world object
-    @param target_position: the target position of the robot base as a (1x3) np.array
+    @param target_position: the target position of the robot base as a (1x3) np.array (x, y, heading)
     @param translation_v: the translational velocity to command in m/sec
     @param angular_v: the angular velocity to command in rad/sec
     '''
@@ -48,9 +50,9 @@ def move_robot_base(world, target_position, translation_v=1, angular_v=1):
     x, y, _ = get_joint_positions(world.robot, world.base_joints)
 
     target_position = np.reshape(target_position, (3,))
-    target_x, target_y = target_position[0:2]
+    target_x, target_y, final_heading = target_position[0:3]
 
-    target_heading = np.arctan((target_y - y) / (target_x - x))
+    target_heading = np.arctan((target_y - y) / (target_x - x)) - np.pi
 
     rotate_robot_base(world, target_heading, angular_v)  # First rotate the robot to be pointing the right way so the motion looks correct
 
@@ -69,6 +71,7 @@ def move_robot_base(world, target_position, translation_v=1, angular_v=1):
         time.sleep(_TIME_STEP)
 
     set_joint_positions(world.robot, world.base_joints, np.append(target_position, [target_heading]))
+    rotate_robot_base(world, final_heading, angular_v)
 
 
 def _get_sample_fn(body, joints, custom_limits={}, **kwargs):
@@ -85,30 +88,38 @@ def _get_sample_fn(body, joints, custom_limits={}, **kwargs):
 def move_robot_arm(world, target_pose):
     '''
     Blocking, moves the robot end effector to the target_pose
-
     @param world: world object
     @param target_pose: Pose object that the end effector will move to
     '''
 
     tool_link = link_from_name(world.robot, 'panda_hand')
 
-    sample_fn = _get_sample_fn(world.robot, world.arm_joints)
-
-    conf = sample_fn()
-    set_joint_positions(world.robot, world.arm_joints, conf)
     ik_joints = get_ik_joints(world.robot, PANDA_INFO, tool_link)
+    start_joint_conf = get_joint_positions(world.robot, ik_joints)
     start_pose = get_link_pose(world.robot, tool_link)
-    
-    for pose in interpolate_poses(start_pose, target_pose, pos_step_size=0.01):
-        conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
-        if conf is None:
-            print('Failure!')
-            wait_for_user()
-            break
-        set_joint_positions(world.robot, ik_joints, conf)
 
+    # print(f'arm_start_pose: {start_pose}')
 
-# TODO: add grasp command
+    rrt_path = rrt(world, start_pose, start_joint_conf, target_pose)
+
+    # print(f'\n\nFound path with {len(rrt_path)} steps:')
+    # for i, (pose, joint_conf) in enumerate(rrt_path):
+    #     print(f'Step {i}\n\tpose: {pose}\n\tjoint_conf: {joint_conf}')
+    # print('\n\n')
+
+    for pose, joint_conf in rrt_path:
+
+        current_pose = get_link_pose(world.robot, tool_link)
+
+        # IK for smooth motion
+        for interp_pose in interpolate_poses(current_pose, pose, pos_step_size=0.01):
+            conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, interp_pose, max_time=0.05), None)
+            if conf is None:
+                print('IK failure!')
+                break
+            set_joint_positions(world.robot, ik_joints, conf)
+
+        set_joint_positions(world.robot, ik_joints, joint_conf)
 
 
 
@@ -150,14 +161,12 @@ def action_pick_up_sugar(world, locations, params):
 
     assert len(params) == 0, f'Params should be empty but was {params}'
 
-    # move base to sugar pick up position
-    move_robot_base(world, locations['robot-base-grasp-sugar'])
-
     # use rrt to move arm to correct position
     move_robot_arm(world, locations['robot-arm-grasp-sugar'])
 
     # grasp sugar
     # TODO
+    print('GRASPING SUGAR')
 
     # move arm back to home position
     move_robot_arm(world, locations['robot-arm-home'])

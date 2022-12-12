@@ -37,19 +37,41 @@ def get_part_pose(body_name, link_name):
     body = body_from_name(body_name)
     return get_link_pose(body, link_from_name(body, link_name))
 
+def _pose_format_correct(pose):
+    if not isinstance(pose, tuple): return False
+    if not len(pose) == 2: return False
+    if not all(isinstance(x, tuple) for x in pose): return False
+    if not len(pose[0]) == 3: return False
+    if not len(pose[1]) == 4: return False
+
+    return True
+
 def rrt(world, start_pose, start_joint_conf, end_pose):
     '''
     Input: the world (Enviroment), start_pose: Pose of the robot, end_pose: Pose of the target pose's gripper
     Output: list of Poses for the gripper from start_pose to end_pose
     '''
 
+    assert _pose_format_correct(start_pose)
+    assert _pose_format_correct(end_pose)
+
+    assert isinstance(start_joint_conf, tuple)
+    assert len(start_joint_conf) == 7
+
     start_joint_conf = tuple(start_joint_conf)
 
     def pose_to_key(pose, conf):
+
+        assert _pose_format_correct(pose)
+
         position, rotation = pose
         return (tuple(position), tuple(rotation)), tuple(conf)
 
     def collision_check(start_pose, end_pose):
+
+        assert _pose_format_correct(start_pose)
+        assert _pose_format_correct(end_pose)
+
         for pose in interpolate_poses(start_pose, end_pose, pos_step_size=0.2):
             conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
             if conf is None:
@@ -75,16 +97,20 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
         return closest
 
     def path_maker(edges, end_node, end_conf, start_node):
+
+        assert _pose_format_correct(end_pose)
+
         current_node = pose_to_key(end_node, end_conf)
-        path_list = []
+        path_list = [current_node]
 
         start_key = pose_to_key(start_node, start_joint_conf)
 
         while current_node != start_key:
             parent_pose, parent_joint_confs = edges[current_node]
-            parent_key = pose_to_key(parent_pose, parent_joint_confs)
 
-            print(f'parent_key: {parent_key}')
+            assert _pose_format_correct(parent_pose)
+
+            parent_key = pose_to_key(parent_pose, parent_joint_confs)
 
             path_list.append(parent_key)
 
@@ -122,6 +148,7 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
 
         return x_random, conf
 
+    assert _pose_format_correct(start_pose)
     V = {pose_to_key(start_pose, start_joint_conf)}  # Each node in the graph is a tuple of (pose_key, joint_configuration tuple)
     E = dict()
 
@@ -151,7 +178,6 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
 
                 if distance(point_from_pose(end_pose), point_from_pose(x_new)) < 0.01:
                     sol = path_maker(E, x_new, conf, start_pose)
-                    sol.append(end_pose)
                     remove_body(sub_robot)
                     return sol
 
