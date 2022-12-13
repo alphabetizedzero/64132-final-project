@@ -148,6 +148,8 @@ def action_move_robot_base(world, locations, params):
     target_position = locations[params['?to-zone']]
 
     move_robot_base(world, target_position)
+    
+    locations['robot-arm-home'] = get_link_pose(world.robot, link_from_name(world.robot, 'panda_hand'))
 
 
 def action_pick_up_sugar(world, locations, params):

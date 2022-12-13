@@ -51,7 +51,7 @@ def _pose_format_correct(pose):
 def rrt(world, start_pose, start_joint_conf, end_pose):
     '''
     Input: the world (Enviroment), start_pose: Pose of the robot, end_pose: Pose of the target pose's gripper
-    Output: list of Poses for the gripper from start_pose to end_pose
+    Output: list of configurations for the robot from start_pose to end_pose
     '''
 
     assert _pose_format_correct(start_pose)
@@ -61,6 +61,13 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
     assert len(start_joint_conf) == 7
 
     start_joint_conf = tuple(start_joint_conf)
+
+    end_joint_conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, link_from_name(world.robot, 'panda_hand'), end_pose, max_time=5), None)
+    if end_joint_conf is None:
+        print("RRT: end pose is out of reach")
+        return None
+
+    end_joint_conf = tuple(end_joint_conf)
 
     def pose_to_key(pose, conf):
 
@@ -74,16 +81,17 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
         assert _pose_format_correct(start_pose)
         assert _pose_format_correct(end_pose)
 
-        for pose in interpolate_poses(start_pose, end_pose, pos_step_size=0.2):
+        conf = None
+        for pose in interpolate_poses(start_pose, end_pose, pos_step_size=0.01):
             conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
             if conf is None:
-                return True
+                return None
             set_joint_positions(sub_robot, ik_joints, conf)
             for obs in world.static_obstacles:
                 if pairwise_collision(sub_robot, obs):
                     print('Collide with', obs)
-                    return True
-        return False
+                    return None
+        return conf
 
     def distance(pos1, pos2):
         return get_distance(pos1, pos2)
@@ -125,7 +133,9 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
     def steer(start_pose, end_pose, distance):
         pose = interpolate_poses(start_pose, end_pose, pos_step_size=distance, ori_step_size=np.pi/4)
         next(pose)
-        return next(pose)
+        new_pose = next(pose)
+        position, rotation = new_pose
+        return tuple([tuple(position), tuple(rotation)])
 
     def get_sample():
 
@@ -136,19 +146,9 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
 
         goal_sample = np.random.uniform()
         if goal_sample < .8:
-            return sample_x_random, sample_conf
+            return sample_x_random
 
-        x_random = end_pose
-        # print(f'Sampling goal')
-
-        # Calculate conf for end pose
-        for pose in interpolate_poses(start_pose, x_random, pos_step_size=0.01):
-            conf = next(closest_inverse_kinematics(world.robot, PANDA_INFO, tool_link, pose, max_time=0.05), None)
-            if conf is None:  # If the IK fails, revert to normal point sampling
-                # print('rrt failure: no IK solution found while sampling goal')
-                return sample_x_random, sample_conf
-
-        return x_random, conf
+        return end_pose
 
     assert _pose_format_correct(start_pose)
     V = {pose_to_key(start_pose, start_joint_conf)}  # Each node in the graph is a tuple of (pose_key, joint_configuration tuple)
@@ -164,24 +164,23 @@ def rrt(world, start_pose, start_joint_conf, end_pose):
 
     for _ in range(100000):
 
-        x_random, conf = get_sample()  # Sample the joint space
+        x_random = get_sample()  # Sample the joint space
 
-        if pose_to_key(x_random, conf) not in E.keys():
+        nearest_node_pose, nearest_node_joint_confs = nearest(V, x_random)
+        x_new = steer(nearest_node_pose, x_random, 0.2)
 
-            nearest_node_pose, nearest_node_joint_confs = nearest(V, x_random)
-            # x_new = steer(nearest_node, x_random, 0.1)
-            x_new = x_random
+        conf = collision_check(nearest_node_pose, x_new)
+        if conf is not None:
 
-            if not collision_check(nearest_node_pose, x_new):
+            new_V = pose_to_key(x_new, conf)
+            V.add(new_V)
+            E[new_V] = pose_to_key(nearest_node_pose, nearest_node_joint_confs)
 
-                new_V = pose_to_key(x_new, conf)
-                V.add(new_V)
-                E[new_V] = pose_to_key(nearest_node_pose, nearest_node_joint_confs)
-
-                if distance(point_from_pose(end_pose), point_from_pose(x_new)) < 0.01:
-                    sol = path_maker(E, x_new, conf, start_pose)
-                    remove_body(sub_robot)
-                    return sol
+            if collision_check(x_new, end_pose) is not None:
+                sol = path_maker(E, x_new, conf, start_pose)
+                sol.append(pose_to_key(end_pose, end_joint_conf))
+                remove_body(sub_robot)
+                return sol
 
     remove_body(sub_robot)
 
@@ -280,3 +279,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
