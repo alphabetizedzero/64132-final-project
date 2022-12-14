@@ -77,6 +77,11 @@ def main():
     action_impls = {
         'move-robot-base': action_move_robot_base,
         'pick-up-sugar': action_pick_up_sugar,
+        'put-down-sugar': action_put_down_sugar,
+        'open-drawer': action_open_drawer,
+        'pick-up-spam': action_pick_up_spam,
+        'put-down-spam': action_put_down_spam,
+        'close-drawer': action_close_drawer,
     }
 
     plan = bfs_planner.generate_plan('domain.pddl', 'problem.pddl')

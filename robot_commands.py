@@ -103,6 +103,7 @@ def move_robot_arm(world, target_pose):
     # print(f'arm_start_pose: {start_pose}')
 
     rrt_path = rrt(world, start_pose, start_joint_conf, target_pose)
+    assert rrt_path is not None, 'RRT path planning failed'
 
     # print(f'\n\nFound path with {len(rrt_path)} steps:')
     # for i, (pose, joint_conf) in enumerate(rrt_path):
@@ -172,3 +173,110 @@ def action_pick_up_sugar(world, locations, params):
 
     # move arm back to home position
     move_robot_arm(world, locations['robot-arm-home'])
+
+
+def action_put_down_sugar(world, locations, params):
+    '''
+    Performs the put-down-sugar action
+
+    @param world: the simulation environment
+    @param locations: a dict(location_name (str): location_coords (1x3 np.array))
+    @param params: dict(param_name (str) : param_value(str)). Should be empty for this action
+    '''
+
+    assert len(params) == 0, f'Params should be empty but was {params}'
+
+    # use rrt to move arm to correct position
+    move_robot_arm(world, locations['robot-arm-drop-sugar'])
+
+    # grasp sugar
+    # TODO
+    print('PUTTING DOWN SUGAR')
+
+    # move arm back to home position
+    move_robot_arm(world, locations['robot-arm-home'])
+
+
+def action_pick_up_spam(world, locations, params):
+    '''
+    Performs the pick-up-spam action
+
+    @param world: the simulation environment
+    @param locations: a dict(location_name (str): location_coords (1x3 np.array))
+    @param params: dict(param_name (str) : param_value(str)). Should be empty for this action
+    '''
+
+    assert len(params) == 0, f'Params should be empty but was {params}'
+
+    # use rrt to move arm to correct position
+    move_robot_arm(world, locations['robot-arm-grasp-spam'])
+
+    print('GRASPING SPAM')
+
+    # move arm back to home position
+    move_robot_arm(world, locations['robot-arm-home'])
+
+
+def action_put_down_spam(world, locations, params):
+    '''
+    Performs the put-down-spam action
+
+    @param world: the simulation environment
+    @param locations: a dict(location_name (str): location_coords (1x3 np.array))
+    @param params: dict(param_name (str) : param_value(str)). Should be empty for this action
+    '''
+
+    assert len(params) == 0, f'Params should be empty but was {params}'
+
+    # use rrt to move arm to correct position
+    move_robot_arm(world, locations['robot-arm-drop-spam'])
+
+    print('PUTTING DOWN SPAM')
+
+    # move arm back to home position
+    move_robot_arm(world, locations['robot-arm-home'])
+
+
+def action_open_drawer(world, locations, params):
+    '''
+    Performs the open-drawer action
+
+    @param world: the simulation environment
+    @param locations: a dict(location_name (str): location_coords (1x3 np.array))
+    @param params: dict(param_name (str) : param_value(str)). Should be empty for this action
+    '''
+
+    assert len(params) == 0, f'Params should be empty but was {params}'
+
+    move_robot_arm(world, locations['robot-arm-open-drawer'])
+
+    print('GRASPING DRAWER')
+
+    move_robot_arm(world, locations['robot-arm-opened-drawer'])
+
+    print('UNGRASPING DRAWER')
+
+    move_robot_arm(world, locations['robot-arm-home'])
+
+
+def action_close_drawer(world, locations, params):
+    '''
+    Performs the close-drawer action
+
+    @param world: the simulation environment
+    @param locations: a dict(location_name (str): location_coords (1x3 np.array))
+    @param params: dict(param_name (str) : param_value(str)). Should be empty for this action
+    '''
+
+    assert len(params) == 0, f'Params should be empty but was {params}'
+
+    move_robot_arm(world, locations['robot-arm-opened-drawer'])
+
+    print('GRASPING DRAWER')
+
+    move_robot_arm(world, locations['robot-arm-open-drawer'])
+
+    print('UNGRASPING DRAWER')
+
+    move_robot_arm(world, locations['robot-arm-home'])
+
