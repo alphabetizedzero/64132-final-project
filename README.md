@@ -32,7 +32,7 @@ The actions that can be taken would be the robot picking up an object, putting d
 
 The problems have separate problem files. Each will be solved independent of the other. 
 
-Because the number of possible states is relatively low for the current implemented domain and problems, there is no need for a heuristic. The planner implemented is a Breadth-First Search on a planning graph for both the sugar and spam problem.
+Because the number of possible states is relatively low for the current implemented domain and problems, there is no need for a heuristic or more advanced planning algorithm. We implemented a Breadth-First Search planner which performs well on the problem and was simple to reason about and test.
 
 
 ## Sample Based Motion Planning
@@ -45,15 +45,30 @@ For this part of the project we decided to implement motion planning using RRT.
  * rrt_draft.py: implementation of the RRT algorithm for arm motion planning
  * simulation.py: our simulation environment and execution engine
 
+### Executing the Plan
+
+https://user-images.githubusercontent.com/13775518/207674659-7e2b6d00-af5a-497d-b187-f245087b2a9b.mp4
+
+In the video, we show the robot executing the first few steps of the generate plan:
+
+ - Move the base to a position to grasp the sugar
+ - Move the arm to a position to grasp the sugar
+ - Move the arm back to the home position while holding the sugar
+
+In the video we can see the robot base moving to the counter in preparation of grasping the sugar. The colorful robot clone that is shown is a visualization of the RRT motion planner and inverse kinematic solver finding a valid path to the sugar grasp position. Our robot doesn't actually pick up the sugar in the simulation, but it prints "GRASPED SUGAR" in the debugging window. If we were to implement grasping, we would probably do it by welding the box to the gripper once they were close enough together. Once the sugar box is "grasped", we can see the arm use RRT and the inverse kinematic solver (visualized with colorful link rendering) navigate the arm back to the home position.
+
+Our activity planner generates the rest of the plan, but our RRT gets stuck after executing the first two steps and is not able to execute it.
+
 ### Explanation
 
-Our BFS planner from part 1 returns a list of actions to take in order to accomplish the goals defined in the problem.pddl file. We are working on creating general implementations of all of these actions in order to command the robot to complete the tasks in the sim. Our execution engine then takes the list of actions and calls their corresponding implementation and passes any relevent parameters to command the robot in the simulation.
+Our BFS planner from part 1 returns a list of actions to take along with some action parameters (if applicable). We created an execution engine that maps the action names to functions that implement the actions by commanding robot motion in the simulation. We hardcode the positions of interest (e.g. the robot base position next to the counter and arm grasping poses) in a dictionary. Some actions are broken down into sub-actions in their implementation functions. For example, the pick-up-sugar action executes the sub-actions: moves the arm to the sugar grasp pose, "grasps" the sugar by printing to the debug console, moves the arm back to the home position.
 
-The BFS planner outputs a list of actions some of which are motion actions between two points. We will maintain a hardcoded map between the names of these points and their actual coordinates in the world frame in order. We will also assume that when the end effector is within a minimum distance of objects and the robot takes an action whose intent is to grasp the object, that the object is grasped without error. We will accomplish this by welding the objects to the robot end effector while they are "grasped".
+We use two approaches to motion planning for this project:
 
-For the actions that involve moving the robot base between different points, we make the assumption that the floor is clear with no obstacles that could cause a collision. This assumption allows us to move the base in straight line paths directly between points without more complex motion planning.
+For the robot base, we assume that the floor is clear of obstacles and that the possible locations the base might navigate to are free of collisions. Using this assumption, our robot base can simply rotate and move in straight lines between points on the floor.
 
-Moving the arm is more complicated because there are objects that could be in the way of the arm. For these actions, we will use RRT to determine a path between points that does not intersect any objects in the world.
+Moving the robot arm is more complicated because there are obstacles that could be in the way and we must take into account the limitations of the arm joints. We decided to use RRT and the pybullet inverse kinematic solver to plan motion for the arm. Our first implementation of RRT generated a path as a list of points in 3D space. While this generated a valid path that avoided obstacles, it didn't work because the inverse kinematic solver sometimes could not find a way to move the arm between adjacent points. The solution to this was to reimplement RRT so that it returned a path as a list of points through the joint space. This ensured that the inverse kinematic solver could find a solution to moving the arm between adjacent points in the path.
+
 
 ## Trajectory Optimization
 
