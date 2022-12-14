@@ -70,7 +70,7 @@ $$ q_N =q_{goal} $$
 
 $$\text{no collision}(q_n) \in [0.9, 1.1] \\ \forall n$$
 
-are the constraints.
+, and the robot joint constriants are the constraints.
 
 The constraints for the trajectory optimization is by checking if a position collides with any other objects in the world, and would return a 1 if there is no collision, and 0 if there is a collision. This is then turned into a constraint where the constraint function value is between [0.9, 1.1] in order to be valid.
 
