@@ -1,6 +1,12 @@
 # 64132-final-project
 ## Introduction
-### Learning Objectives
+
+Robots are becoming more prevalent in the world, ranging from industrial robots, Mars rovers, to underwater explorers. Thus, many robots are in enviroments where humans cannot fully predict or visit while the robot is operating. This complication leads to the need for automating tasks that the robot can carry out without supervision or control from a human.
+
+An autonomous robot needs to achieve three objectives:
+ * Be able to schedule tasks such that it can complete a goal
+ * Be able to implement the tasks while avoiding obstacles
+ * Optimize its movement for maximum efficency
 
 ## Activity Planning
 
@@ -16,7 +22,7 @@ To break down the problem into managable parts, we first have some assumptions:
 * The robot is given the locations of the sugar box, spam box, and the goal.
 * There will always be a sugar box, a spam box, goal zones, and a robot.
 * The robot's sensors are accurate, meaning that the action that it is told to perform will be completed 100% of the time.
-* The motion of the robot can be abstracted away in the activity plan, and the robot can be commanded to 
+* The motion of the robot can be abstracted away in the activity plan, and the robot can be commanded to move
 
 Next, we determine the predicates needed to describe the states of the world in a domain file.
 
