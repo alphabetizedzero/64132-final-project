@@ -1,7 +1,7 @@
 # 64132-final-project
 ## Introduction
 
-Robots are becoming more prevalent in the world, ranging from industrial robots, Mars rovers, to underwater explorers. Thus, many robots are in enviroments where humans cannot fully predict or visit while the robot is operating. This complication leads to the need for automating tasks that the robot can carry out without supervision or control from a human.
+Robots are becoming more prevalent in the world, ranging from industrial robots and self-driving cars, to Mars rovers and underwater explorers. Thus, many robots are in enviroments where humans cannot fully predict or visit while the robot is operating. This complication leads to the need for automating tasks that the robot can carry out without supervision or control from a human.
 
 An autonomous robot needs to achieve three objectives:
  * Be able to schedule tasks such that it can complete a goal
@@ -112,6 +112,6 @@ In the video, the blue line is the path of the sample based motion planner (RRT)
 The trajectory optimization chooses the path with the shortest distance, but takes longer to compute than RRT.
 
 ## Conclusion
-
+Overall, we were able to get the activity plan, motion plan, and trajectory optimization to work. As such, we have an activity plan, a trajectory from RRT, and an optimized trajectory. Unfortunately, we were unable to fully combine the activity and motion plan due to RRT becoming stuck after a couple of steps.
 
 
